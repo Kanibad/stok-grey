@@ -137,20 +137,10 @@
       </div>
       <div>
         <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-white">Stock Grey</h1>
-        <p class="text-xs sm:text-sm text-slate-400">Monitoring stok kain grey</p>
+        <p class="text-xs sm:text-sm text-slate-400">Monitoring stok grey SS2</p>
       </div>
     </div>
 
-    <div class="flex items-center gap-3 bg-[var(--card-bg)] border border-white/5 rounded-xl px-4 py-2.5">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="text-slate-500">
-        <circle cx="12" cy="12" r="9"/>
-        <path d="M12 7v5l3 3" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      <div class="text-right leading-tight">
-        <div id="live-clock-date" class="text-xs text-slate-400">—</div>
-        <div id="live-clock-time" class="text-sm font-mono font-semibold text-slate-100 tabular-nums">--:--:--</div>
-      </div>
-    </div>
   </header>
 
   <!-- KPI CARDS -->
@@ -454,19 +444,6 @@
     searchTerm = e.target.value;
     applyFiltersAndRender();
   });
-
-  // =====================================================================
-  // CLOCK
-  // =====================================================================
-  function updateClock() {
-    const now = new Date();
-    document.getElementById('live-clock-date').textContent =
-      now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-    document.getElementById('live-clock-time').textContent =
-      now.toLocaleTimeString('id-ID');
-  }
-  updateClock();
-  setInterval(updateClock, 1000);
 
   // =====================================================================
   // FETCH — Google Sheets API v4
