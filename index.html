@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stock Grey — Monitoring Stok Kain Grey</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['Inter', 'sans-serif'],
+          mono: ['"JetBrains Mono"', 'monospace'],
+        },
+      }
+    }
+  }
+</script>
+
+<style>
+  :root{
+    --bg-base: #0A0E1A;
+    --bg-elev: #10162A;
+    --card-bg: #131B2E;
+    --border-soft: rgba(255,255,255,0.06);
+  }
+
+  body{
+    background-color: var(--bg-base);
+    background-image:
+      radial-gradient(circle at 15% 0%, rgba(56,132,255,0.07), transparent 45%),
+      radial-gradient(circle at 85% 15%, rgba(167,139,250,0.06), transparent 40%);
+    min-height: 100vh;
+  }
+
+  /* Subtle woven / fabric-weave texture — nod to the textile subject matter */
+  .weave-bg{
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.035;
+    background-image:
+      repeating-linear-gradient(45deg, #fff 0px, #fff 1px, transparent 1px, transparent 10px),
+      repeating-linear-gradient(-45deg, #fff 0px, #fff 1px, transparent 1px, transparent 10px);
+  }
+
+  ::-webkit-scrollbar{ width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track{ background: transparent; }
+  ::-webkit-scrollbar-thumb{ background: rgba(255,255,255,0.12); border-radius: 8px; }
+  ::-webkit-scrollbar-thumb:hover{ background: rgba(255,255,255,0.2); }
+
+  .kpi-card{
+    background: linear-gradient(180deg, var(--card-bg), rgba(19,27,46,0.6));
+    border: 1px solid var(--border-soft);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  }
+  .kpi-card:hover{ transform: translateY(-2px); }
+
+  .glow-sky:hover, .glow-sky.is-active{ box-shadow: 0 0 0 1px rgba(56,189,248,0.4), 0 8px 28px -8px rgba(56,189,248,0.45); border-color: rgba(56,189,248,0.5); }
+  .glow-violet:hover, .glow-violet.is-active{ box-shadow: 0 0 0 1px rgba(167,139,250,0.4), 0 8px 28px -8px rgba(167,139,250,0.45); border-color: rgba(167,139,250,0.5); }
+  .glow-cyan:hover, .glow-cyan.is-active{ box-shadow: 0 0 0 1px rgba(34,211,238,0.4), 0 8px 28px -8px rgba(34,211,238,0.45); border-color: rgba(34,211,238,0.5); }
+  .glow-green:hover, .glow-green.is-active{ box-shadow: 0 0 0 1px rgba(74,222,128,0.4), 0 8px 28px -8px rgba(74,222,128,0.45); border-color: rgba(74,222,128,0.5); }
+  .glow-amber:hover, .glow-amber.is-active{ box-shadow: 0 0 0 1px rgba(251,191,36,0.4), 0 8px 28px -8px rgba(251,191,36,0.45); border-color: rgba(251,191,36,0.5); }
+  .glow-red:hover, .glow-red.is-active{ box-shadow: 0 0 0 1px rgba(248,113,113,0.4), 0 8px 28px -8px rgba(248,113,113,0.45); border-color: rgba(248,113,113,0.5); }
+
+  .kpi-card.is-active{ transform: translateY(-2px); }
+
+  @keyframes fadeUp{
+    from{ opacity: 0; transform: translateY(6px); }
+    to{ opacity: 1; transform: translateY(0); }
+  }
+  .fade-up{ animation: fadeUp 0.35s ease both; }
+
+  .badge{
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+  .badge-dot{ width: 6px; height: 6px; border-radius: 999px; }
+
+  .badge-rayon{ background: rgba(167,139,250,0.12); color: #c4b5fd; border: 1px solid rgba(167,139,250,0.25); }
+  .badge-poly{ background: rgba(34,211,238,0.12); color: #67e8f9; border: 1px solid rgba(34,211,238,0.25); }
+  .badge-neutral{ background: rgba(148,163,184,0.12); color: #cbd5e1; border: 1px solid rgba(148,163,184,0.25); }
+
+  .badge-aman{ background: rgba(74,222,128,0.12); color: #86efac; border: 1px solid rgba(74,222,128,0.25); }
+  .badge-menipis{ background: rgba(251,191,36,0.12); color: #fcd34d; border: 1px solid rgba(251,191,36,0.25); }
+  .badge-habis{ background: rgba(248,113,113,0.12); color: #fca5a5; border: 1px solid rgba(248,113,113,0.25); }
+
+  .badge-aman .badge-dot{ background: #4ade80; }
+  .badge-menipis .badge-dot{ background: #fbbf24; }
+  .badge-habis .badge-dot{ background: #f87171; }
+
+  table thead th{ position: sticky; top: 0; background: var(--bg-elev); z-index: 1; }
+
+  input[type="text"]:focus{ outline: none; }
+</style>
+</head>
+
+<body class="font-sans text-slate-200 antialiased">
+<div class="weave-bg"></div>
+
+<div class="relative z-10 max-w-[1400px] mx-auto px-5 sm:px-8 py-8">
+
+  <!-- HEADER -->
+  <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-500/20 to-violet-500/20 border border-white/10 flex items-center justify-center">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="text-sky-300">
+          <path d="M4 6h16M4 6v12a2 2 0 002 2h12a2 2 0 002-2V6M4 6l2-3h12l2 3" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M9 11h6M9 15h6" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div>
+        <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-white">Stock Grey</h1>
+        <p class="text-xs sm:text-sm text-slate-400">Monitoring stok kain grey</p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-3 bg-[var(--card-bg)] border border-white/5 rounded-xl px-4 py-2.5">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="text-slate-500">
+        <circle cx="12" cy="12" r="9"/>
+        <path d="M12 7v5l3 3" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div class="text-right leading-tight">
+        <div id="live-clock-date" class="text-xs text-slate-400">—</div>
+        <div id="live-clock-time" class="text-sm font-mono font-semibold text-slate-100 tabular-nums">--:--:--</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- KPI CARDS -->
+  <section class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 mb-8">
+
+    <button data-filter="all" class="kpi-card glow-sky is-active rounded-2xl p-4 text-left cursor-pointer fade-up" style="animation-delay:0ms">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-[11px] font-medium text-slate-400 uppercase tracking-wide">Total Jenis Kain</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7dd3fc" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 10h16M10 4v16" stroke-linecap="round"/></svg>
+      </div>
+      <div id="kpi-total" class="font-mono text-2xl font-bold text-white">—</div>
+    </button>
+
+    <button data-filter="rayon" class="kpi-card glow-violet rounded-2xl p-4 text-left cursor-pointer fade-up" style="animation-delay:40ms">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-[11px] font-medium text-slate-400 uppercase tracking-wide">Total RAYON</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c4b5fd" stroke-width="1.8"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.5"/></svg>
+      </div>
+      <div id="kpi-rayon" class="font-mono text-2xl font-bold text-violet-300">—</div>
+    </button>
+
+    <button data-filter="poly" class="kpi-card glow-cyan rounded-2xl p-4 text-left cursor-pointer fade-up" style="animation-delay:80ms">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-[11px] font-medium text-slate-400 uppercase tracking-wide">Total POLY</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#67e8f9" stroke-width="1.8"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.5"/></svg>
+      </div>
+      <div id="kpi-poly" class="font-mono text-2xl font-bold text-cyan-300">—</div>
+    </button>
+
+    <button data-filter="aman" class="kpi-card glow-green rounded-2xl p-4 text-left cursor-pointer fade-up" style="animation-delay:120ms">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-[11px] font-medium text-slate-400 uppercase tracking-wide">Stock Aman</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#86efac" stroke-width="1.8"><path d="M20 6L9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div id="kpi-aman" class="font-mono text-2xl font-bold text-green-300">—</div>
+    </button>
+
+    <button data-filter="menipis" class="kpi-card glow-amber rounded-2xl p-4 text-left cursor-pointer fade-up" style="animation-delay:160ms">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-[11px] font-medium text-slate-400 uppercase tracking-wide">Stock Menipis</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fcd34d" stroke-width="1.8"><path d="M12 9v4M12 17h.01M10.3 3.9L2.7 18a1.6 1.6 0 001.4 2.4h16a1.6 1.6 0 001.4-2.4L13.7 3.9a1.6 1.6 0 00-2.8 0z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div id="kpi-menipis" class="font-mono text-2xl font-bold text-amber-300">—</div>
+    </button>
+
+    <button data-filter="habis" class="kpi-card glow-red rounded-2xl p-4 text-left cursor-pointer fade-up" style="animation-delay:200ms">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-[11px] font-medium text-slate-400 uppercase tracking-wide">Stock Habis</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fca5a5" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6" stroke-linecap="round"/></svg>
+      </div>
+      <div id="kpi-habis" class="font-mono text-2xl font-bold text-red-300">—</div>
+    </button>
+
+  </section>
+
+  <!-- FILTER BAR -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+    <div id="filter-badge-container" class="flex items-center gap-2 min-h-[38px]"></div>
+
+    <div class="relative w-full sm:w-80">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">
+        <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3" stroke-linecap="round"/>
+      </svg>
+      <input id="search-input" type="text" placeholder="Cari jenis kain / status..."
+        class="w-full bg-[var(--card-bg)] border border-white/5 rounded-xl pl-9 pr-3 py-2.5 text-sm text-slate-200 placeholder:text-slate-500 focus:border-sky-400/40 transition-colors" />
+    </div>
+  </div>
+
+  <!-- TABLE -->
+  <div class="rounded-2xl border border-white/5 bg-[var(--card-bg)] overflow-hidden">
+    <div class="overflow-x-auto max-h-[560px] overflow-y-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="text-left text-[11px] uppercase tracking-wide text-slate-400 border-b border-white/5">
+            <th class="px-4 py-3 font-semibold">Nama Kain</th>
+            <th class="px-4 py-3 font-semibold">Kategori</th>
+            <th class="px-4 py-3 font-semibold">Stock (M)</th>
+            <th class="px-4 py-3 font-semibold">Last Update</th>
+            <th class="px-4 py-3 font-semibold">Status</th>
+          </tr>
+        </thead>
+        <tbody id="table-body">
+          <tr><td colspan="5" class="px-4 py-10 text-center text-slate-400">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <p class="text-xs text-slate-600 mt-4 text-center">Stock Grey · data ditarik langsung dari Google Sheets API</p>
+
+</div>
+
+<script>
+  // =====================================================================
+  // CONFIG — isi ketiga nilai berikut sesuai spreadsheet kamu
+  // =====================================================================
+  const API_KEY = 'AIzaSyDWmrbtO1dDMSNwlVG6sGM8ZuP2P3fUHKs';
+  const SPREADSHEET_ID = '1KvAIDgdETLmWGMfYkxwum249aTAzvcm5kr0GflyHqhs';
+  const RANGE = 'GUDANG2!A2:G';
+
+  // =====================================================================
+  // STATE
+  // =====================================================================
+  let rawData = [];
+  let activeFilter = null;   // 'rayon' | 'poly' | 'aman' | 'menipis' | 'habis' | null
+  let searchTerm = '';
+
+  const filterLabels = {
+    rayon: 'RAYON',
+    poly: 'POLY',
+    aman: 'Aman',
+    menipis: 'Menipis',
+    habis: 'Habis',
+  };
+
+  // =====================================================================
+  // HELPERS — parsing & status logic
+  // =====================================================================
+  function parseNumber(val) {
+    if (val === undefined || val === null) return 0;
+    const s = String(val).trim();
+    if (s === '') return 0;
+    const cleaned = s.replace(/\./g, '').replace(/,/g, '.').replace(/[^\d.-]/g, '');
+    const n = parseFloat(cleaned);
+    return isNaN(n) ? 0 : n;
+  }
+
+  function parseStokMinimum(val) {
+    const s = String(val ?? '').trim();
+    if (s === '' || s === '-') return null;
+    const cleaned = s.replace(/\./g, '').replace(/,/g, '.').replace(/[^\d.-]/g, '');
+    const n = parseFloat(cleaned);
+    return isNaN(n) ? null : n;
+  }
+
+  function getStatus(stokAkhir, stokMinimum) {
+    if (stokAkhir <= 0) return { label: 'Habis', key: 'habis' };
+    if (stokMinimum !== null && stokAkhir < stokMinimum) return { label: 'Menipis', key: 'menipis' };
+    return { label: 'Aman', key: 'aman' };
+  }
+
+  function processData(rows) {
+    return rows.map(row => {
+      const nama = (row[0] ?? '-').toString();
+      const jenisRaw = (row[1] ?? '').toString().trim().toUpperCase();
+      const jenis = jenisRaw === 'RAYON' ? 'RAYON' : (jenisRaw === 'POLY' ? 'POLY' : jenisRaw);
+      const masuk = parseNumber(row[2]);
+      const keluar = parseNumber(row[3]);
+      const stokAkhir = parseNumber(row[4]);
+      const stokMinimum = parseStokMinimum(row[5]);
+      const lastUpdate = (row[6] ?? '-').toString();
+      const status = getStatus(stokAkhir, stokMinimum);
+      return { nama, jenis, masuk, keluar, stokAkhir, stokMinimum, lastUpdate, status: status.label, statusKey: status.key };
+    });
+  }
+
+  // =====================================================================
+  // RENDER — badges
+  // =====================================================================
+  function categoryBadge(jenis) {
+    if (jenis === 'RAYON') return `<span class="badge badge-rayon">RAYON</span>`;
+    if (jenis === 'POLY') return `<span class="badge badge-poly">POLY</span>`;
+    return `<span class="badge badge-neutral">${jenis || '-'}</span>`;
+  }
+
+  function statusBadge(statusKey, label) {
+    return `<span class="badge badge-${statusKey}"><span class="badge-dot"></span>${label}</span>`;
+  }
+
+  // =====================================================================
+  // RENDER — KPI cards
+  // =====================================================================
+  function renderKPIs(data) {
+    const total = data.length;
+    const totalRayon = data.filter(d => d.jenis === 'RAYON').length;
+    const totalPoly = data.filter(d => d.jenis === 'POLY').length;
+    const totalAman = data.filter(d => d.statusKey === 'aman').length;
+    const totalMenipis = data.filter(d => d.statusKey === 'menipis').length;
+    const totalHabis = data.filter(d => d.statusKey === 'habis').length;
+
+    document.getElementById('kpi-total').textContent = total;
+    document.getElementById('kpi-rayon').textContent = totalRayon;
+    document.getElementById('kpi-poly').textContent = totalPoly;
+    document.getElementById('kpi-aman').textContent = totalAman;
+    document.getElementById('kpi-menipis').textContent = totalMenipis;
+    document.getElementById('kpi-habis').textContent = totalHabis;
+  }
+
+  function setKPILoadingState(text) {
+    ['kpi-total', 'kpi-rayon', 'kpi-poly', 'kpi-aman', 'kpi-menipis', 'kpi-habis']
+      .forEach(id => document.getElementById(id).textContent = text);
+  }
+
+  // =====================================================================
+  // RENDER — table
+  // =====================================================================
+  function renderTable(data) {
+    const tbody = document.getElementById('table-body');
+
+    if (data.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-10 text-center text-slate-500">Tidak ada data yang cocok.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = data.map(d => `
+      <tr class="border-b border-white/5 last:border-b-0 hover:bg-white/[0.03] transition-colors">
+        <td class="px-4 py-3 font-medium text-slate-200">${d.nama}</td>
+        <td class="px-4 py-3">${categoryBadge(d.jenis)}</td>
+        <td class="px-4 py-3 font-mono text-slate-300 tabular-nums">${d.stokAkhir.toLocaleString('id-ID')}</td>
+        <td class="px-4 py-3 text-xs text-slate-400">${d.lastUpdate}</td>
+        <td class="px-4 py-3">${statusBadge(d.statusKey, d.status)}</td>
+      </tr>
+    `).join('');
+  }
+
+  function showLoading() {
+    document.getElementById('table-body').innerHTML =
+      `<tr><td colspan="5" class="px-4 py-10 text-center text-slate-400">
+        <div class="inline-flex items-center gap-2">
+          <svg class="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12a9 9 0 11-9-9" stroke-linecap="round"/>
+          </svg>
+          Memuat data...
+        </div>
+      </td></tr>`;
+    setKPILoadingState('...');
+  }
+
+  function showError(message) {
+    document.getElementById('table-body').innerHTML =
+      `<tr><td colspan="5" class="px-4 py-10 text-center text-red-400">
+        Gagal memuat data. Periksa API_KEY, SPREADSHEET_ID, dan RANGE.
+        <div class="text-xs text-slate-500 mt-1">${message}</div>
+      </td></tr>`;
+    setKPILoadingState('—');
+  }
+
+  // =====================================================================
+  // FILTER — badge + combined filter/search
+  // =====================================================================
+  function updateFilterBadge() {
+    const container = document.getElementById('filter-badge-container');
+    if (!activeFilter) {
+      container.innerHTML = '';
+      return;
+    }
+    container.innerHTML = `
+      <span class="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full pl-3 pr-2 py-1.5 text-xs text-slate-300">
+        Filter: <span class="font-semibold text-slate-100">${filterLabels[activeFilter]}</span>
+        <button id="clear-filter-btn" class="w-4 h-4 rounded-full flex items-center justify-center hover:bg-white/10 text-slate-400 hover:text-slate-100 transition-colors">×</button>
+      </span>`;
+    document.getElementById('clear-filter-btn').addEventListener('click', () => {
+      activeFilter = null;
+      updateActiveCardStyles();
+      applyFiltersAndRender();
+    });
+  }
+
+  function updateActiveCardStyles() {
+    document.querySelectorAll('.kpi-card').forEach(card => {
+      const f = card.dataset.filter;
+      const shouldBeActive = (f === 'all' && !activeFilter) || (f === activeFilter);
+      card.classList.toggle('is-active', shouldBeActive);
+    });
+  }
+
+  function getFilteredData() {
+    let data = rawData;
+
+    if (activeFilter === 'rayon') data = data.filter(d => d.jenis === 'RAYON');
+    else if (activeFilter === 'poly') data = data.filter(d => d.jenis === 'POLY');
+    else if (activeFilter) data = data.filter(d => d.statusKey === activeFilter);
+
+    if (searchTerm) {
+      const q = searchTerm.toLowerCase();
+      data = data.filter(d =>
+        d.nama.toLowerCase().includes(q) ||
+        d.jenis.toLowerCase().includes(q) ||
+        d.status.toLowerCase().includes(q)
+      );
+    }
+    return data;
+  }
+
+  function applyFiltersAndRender() {
+    renderTable(getFilteredData());
+    updateFilterBadge();
+  }
+
+  // =====================================================================
+  // EVENTS
+  // =====================================================================
+  document.querySelectorAll('.kpi-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const f = card.dataset.filter;
+      if (f === 'all') {
+        activeFilter = null;
+      } else if (activeFilter === f) {
+        activeFilter = null;
+      } else {
+        activeFilter = f;
+      }
+      updateActiveCardStyles();
+      applyFiltersAndRender();
+    });
+  });
+
+  document.getElementById('search-input').addEventListener('input', (e) => {
+    searchTerm = e.target.value;
+    applyFiltersAndRender();
+  });
+
+  // =====================================================================
+  // CLOCK
+  // =====================================================================
+  function updateClock() {
+    const now = new Date();
+    document.getElementById('live-clock-date').textContent =
+      now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    document.getElementById('live-clock-time').textContent =
+      now.toLocaleTimeString('id-ID');
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
+
+  // =====================================================================
+  // FETCH — Google Sheets API v4
+  // =====================================================================
+  async function fetchData() {
+    showLoading();
+    try {
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${RANGE}?key=${API_KEY}`;
+      const res = await fetch(url);
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => null);
+        throw new Error(errJson?.error?.message || `HTTP ${res.status}`);
+      }
+      const json = await res.json();
+      const rows = json.values || [];
+      rawData = processData(rows);
+      renderKPIs(rawData);
+      applyFiltersAndRender();
+    } catch (err) {
+      console.error(err);
+      showError(err.message);
+    }
+  }
+
+  fetchData();
+</script>
+</body>
+</html>
